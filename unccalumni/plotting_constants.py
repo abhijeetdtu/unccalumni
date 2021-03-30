@@ -26,7 +26,7 @@ class THEME():
 
     cat_colors = scale_fill_manual(values = colors_light)
     cat_colors_lines = scale_color_manual(values = colors_light)
-    gradient_colors = scale_fill_gradient("#aad576", "#ce4257")
+    gradient_colors = scale_fill_gradient( "#ce4257" , "#aad576")
     FILL = 1
     COLOR = 2
 

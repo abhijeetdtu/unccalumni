@@ -61,8 +61,9 @@ class Basic(DashApp):
             ,aes(x="year" , y="counts" , group="semester" ,fill="semester"))
             + geom_col(position="dodge")
             + coord_flip()
-            + theme_bw()
-            + theme(figure_size=(8,3))
+            + THEME.cat_colors
+            + THEME.mt
+            + theme(figure_size=(8,3), panel_grid_major=element_blank())
             + ggtitle("Year Wise Applicant Counts")
         )
         #counts_by_countries[~counts_by_countries["name"].isin(["india" , "united states"])]
@@ -74,8 +75,11 @@ class Basic(DashApp):
             # + geom_text(counts_by_countries[counts_by_countries["PERM_ADDRESS_COUNTRY"].isin(["india" , "united states"])],
             #                                 aes(label="PERM_ADDRESS_COUNTRY"))
             # + facet_wrap("~ semester + year")
-            + theme_bw()
-            + theme(figure_size=(12,5) , panel_grid_major_x=element_blank() , axis_text_x=element_blank())
+            + THEME.gradient_colors
+            + THEME.mt
+            + theme(figure_size=(12,5)
+                , panel_grid_major=element_blank()
+                , axis_text=element_blank())
             #+ scale_fill_continuous(breaks=np.geomspace(1,800 , 10))
             + ggtitle("Applicant Count by Countries")
             + xlab("")
