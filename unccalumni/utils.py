@@ -12,7 +12,7 @@ class Singleton(type):
         return cls._instances[cls]
 
 def getLogging():
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
     return logging
 
 
