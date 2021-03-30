@@ -6,4 +6,4 @@ pandas
 numpy
 geopandas
 gunicorn
-plotnine==0.7.1
+plotnine
