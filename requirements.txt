@@ -1,6 +1,7 @@
 flask
 dash
 dash-bootstrap-components
+xlrd
 pandas
 numpy
 geopandas
