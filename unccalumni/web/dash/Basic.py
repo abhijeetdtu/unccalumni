@@ -15,7 +15,7 @@ import numpy as np
 import random
 import json
 import geopandas
-
+import pdb
 
 
 logging.basicConfig(level = logging.INFO)
@@ -53,19 +53,21 @@ class Basic(DashApp):
                                alum_df.groupby(["PERM_ADDRESS_COUNTRY"]).size().reset_index(name="counts") ,
                                right_on="PERM_ADDRESS_COUNTRY" ,left_on="name" , how="left" )
 
-        counts_by_countries = pd.merge( geo_df ,
-                               alum_df.groupby(["PERM_ADDRESS_COUNTRY" , "year" , "semester"]).size().reset_index(name="counts") ,
-                               right_on="PERM_ADDRESS_COUNTRY" ,left_on="name" , how="left" )
-
-        counts_by_countries["semester"] = pd.Categorical(counts_by_countries["semester"]  , categories=["Spring" , "Fall"] , ordered=True)
-        counts_by_countries["year"] = pd.Categorical(counts_by_countries["year"]  , categories=[ "2019" , "2021"] , ordered=True)
-        diffs_by_countires = counts_by_countries.groupby([ "PERM_ADDRESS_COUNTRY" , "year" ,])["counts"].sum().fillna(0).reset_index(name="counts").groupby("PERM_ADDRESS_COUNTRY").apply(lambda df : df["counts"].diff().fillna(df["counts"])).reset_index()
-        diffs_by_countires["level_1"] = diffs_by_countires["level_1"].apply(lambda v : 2019 if v % 2 == 0 else 2021)
-        tti_diffs = diffs_by_countires[(diffs_by_countires["level_1"] == 2021) ]
-        tti_diffs["nudge"] = np.where(tti_diffs["counts"] > 0 , tti_diffs["counts"] + 2, tti_diffs["counts"]-2)
-        tti_diffs["is_positive"] = tti_diffs["counts"] > 0
+        year_diff = (
+            pd.crosstab(alum_df[ "PERM_ADDRESS_COUNTRY"] , alum_df["year"] ,alum_df[ "PERSONID"] , aggfunc=lambda df : df.size)
+                 .fillna(0)
+                 .reset_index()
+                 .melt(id_vars="PERM_ADDRESS_COUNTRY")
+                 .groupby("PERM_ADDRESS_COUNTRY")
+                 .apply(lambda df : pd.Series(df["value"].diff().values
+                                              , index=df["year"].unique()))
+                 .reset_index()
+                 .melt(id_vars="PERM_ADDRESS_COUNTRY")
+                 .fillna(0)
+        )
+        year_diff["variable"] = pd.Categorical(year_diff["variable"] , categories =year_diff["variable"].unique() ,ordered=True)
+        year_diff["is_positive"] = year_diff["value"] > 0
         #counts_by_countries["counts"] = counts_by_countries["counts"].fillna(0)
-        print(counts_by_countries.head())
         #+ colors \
         p_counts = (
             ggplot(alum_df.groupby(["year" , "semester"]).size().reset_index(name="counts")
@@ -88,7 +90,7 @@ class Basic(DashApp):
             # + facet_wrap("~ semester + year")
             + THEME.gradient_colors
             + THEME.mt
-            + theme(figure_size=(12,6)
+            + theme(figure_size=(7,6)
                 , panel_grid_major=element_blank()
                 , axis_text=element_blank())
             #+ scale_fill_continuous(breaks=np.geomspace(1,800 , 10))
@@ -98,20 +100,20 @@ class Basic(DashApp):
         )
 
         p_diff =(
-            ggplot(tti_diffs
-                   , aes(x="PERM_ADDRESS_COUNTRY" , y="counts" , group="level_1" , fill="is_positive"))
-            + geom_hline(yintercept=1 , color="#e76f51")
-            + geom_col(position="dodge")
-            + geom_text(aes(label="PERM_ADDRESS_COUNTRY" , y="nudge")
-                      , angle=90
-                      , nudge_x = -0.25
-                      , alpha=0.5
-                      ,color="white")
-            + THEME.gradient_colors
+        ggplot(year_diff , aes(x="variable" , y="value" , group="PERM_ADDRESS_COUNTRY"))
+        + geom_line(color="white")
+        + geom_text(data=year_diff[year_diff["variable"] ==  year_diff["variable"].max()]
+                    , mapping=aes(label="PERM_ADDRESS_COUNTRY" ,color="is_positive")
+                    , nudge_x=0.01
+                    , ha="left"
+                    ,alpha=0.5)
+            + THEME.cat_colors
             + THEME.mt
-            + theme(figure_size=(12,6) , panel_grid_major_x=element_blank(), axis_text_x=element_blank())
+            + theme(figure_size=(5,4)
+                    , panel_grid_major_y=element_blank())
             + scale_y_continuous(values=np.arange(-10,10,5))
-            + scale_fill_manual(values={True : "#2a9d8f" , False : "#f4a261"} , guide=False)
+            + scale_color_discrete(guide=False)
+            #+ scale_fill_manual(values={True : "#2a9d8f" , False : "#f4a261"} , guide=False)
             + ylab("Difference")
             + ggtitle("2021 to 2019 Application Count Difference")
 

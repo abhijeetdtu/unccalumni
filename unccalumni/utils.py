@@ -40,17 +40,7 @@ class DataFrameService(metaclass=Singleton):
         return self.cached_access("geo_df" , self._get_geo_df)
 
     def _get_alumni_df(self):
-        dfs = []
-        for f in os.listdir(self.path_to_files):
-          if f.find('.xlsx') > -1:
-            path = pathlib.Path(self.path_to_files , f)
-            df = pd.read_excel(path ,engine="openpyxl",skiprows=4)
-            year = f.replace("DSBA Applicant Pool " , "").replace(".xlsx" ,"").strip(" ")
-            sem , year = year.split(" ")
-            df["year"] = year
-            df["semester"] = sem
-            dfs.append(df)
-        alum_df =  pd.concat(dfs)
+        alum_df =  pd.read_csv(os.path.join(self.path_to_files , "combined.csv"))
         alum_df["PERM_ADDRESS_COUNTRY"]= alum_df["PERM_ADDRESS_COUNTRY"].str.lower()
         return alum_df
 
