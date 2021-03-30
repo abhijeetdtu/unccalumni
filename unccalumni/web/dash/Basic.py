@@ -105,8 +105,10 @@ class Basic(DashApp):
             + geom_text(aes(label="PERM_ADDRESS_COUNTRY" , y="nudge")
                       , angle=90
                       , nudge_x = -0.25
-                      , alpha=0.5)
-            + theme_bw()
+                      , alpha=0.5
+                      ,color="white")
+            + THEME.gradient_colors
+            + THEME.mt
             + theme(figure_size=(12,6) , panel_grid_major_x=element_blank(), axis_text_x=element_blank())
             + scale_y_continuous(values=np.arange(-10,10,5))
             + scale_fill_manual(values={True : "#2a9d8f" , False : "#f4a261"} , guide=False)

@@ -44,7 +44,7 @@ class DataFrameService(metaclass=Singleton):
         for f in os.listdir(self.path_to_files):
           if f.find('.xlsx') > -1:
             path = pathlib.Path(self.path_to_files , f)
-            df = pd.read_excel(path ,skiprows=4)
+            df = pd.read_excel(path ,engine="openpyxl",skiprows=4)
             year = f.replace("DSBA Applicant Pool " , "").replace(".xlsx" ,"").strip(" ")
             sem , year = year.split(" ")
             df["year"] = year
