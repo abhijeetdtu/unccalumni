@@ -25,26 +25,32 @@ class Basic(DashApp):
     class HTML_IDS:
         IMG = "img"
         CHECKLIST = "checklist"
+        YEAR_CHECKLIST = "year_checklist"
+        PROGRAM_CHECKLIST = "program_checklist"
 
-    def __init__(self,route,flaskApp):
+    def __init__(self,route,flaskApp , title=None):
         self.default_word = "modi"
         self.INPUT_PLACEHOLDER = "Search for something like Election, Coronavirus , Delhi"
         self.ERROR_MSG = "Term not found, try something else"
         self.NO_SELECTION_MSG = "Please select at least one option."
-
-        self.TOP_N = 10
+        self.TITLE= title or "Applicant Counts"
+        self.TOP_N = 9
         super().__init__(route,flaskApp)
 
 
-    def _filteredDf(self,checklist):
+    def _filteredDf(self,checklist , year_checklist , program_checklist):
         alum_df= DataFrameService().get_alumni_df()
         if "All" not in checklist:
             alum_df = alum_df[alum_df["PERM_ADDRESS_COUNTRY"].isin(checklist)]
+        if "All" not in year_checklist:
+            alum_df = alum_df[alum_df["year"].isin(year_checklist)]
 
-        print(checklist)
+        if "All" not in program_checklist:
+            alum_df = alum_df[alum_df["program"].isin(program_checklist)]
+
         return alum_df , DataFrameService().get_geo_df()
 
-    def _chart(self,dfs,checklist):
+    def _chart(self,dfs,checklist,year_checklist , program_checklist):
         if dfs is None:
             return self.getErrorPlot(self.ERROR_MSG)
 
@@ -70,8 +76,8 @@ class Basic(DashApp):
         #counts_by_countries["counts"] = counts_by_countries["counts"].fillna(0)
         #+ colors \
         p_counts = (
-            ggplot(alum_df.groupby(["year" , "semester"]).size().reset_index(name="counts")
-            ,aes(x="year" , y="counts" , group="semester" ,fill="semester"))
+            ggplot(alum_df.groupby(["year" , "SEMESTER"]).size().reset_index(name="counts")
+            ,aes(x="year" , y="counts" , group="SEMESTER" ,fill="SEMESTER"))
             + geom_col(position="dodge")
             + coord_flip()
             + THEME.cat_colors
@@ -87,44 +93,45 @@ class Basic(DashApp):
             # + geom_col()
             # + geom_text(counts_by_countries[counts_by_countries["PERM_ADDRESS_COUNTRY"].isin(["india" , "united states"])],
             #                                 aes(label="PERM_ADDRESS_COUNTRY"))
-            # + facet_wrap("~ semester + year")
+            # + facet_wrap("~ SEMESTER + year")
             + THEME.gradient_colors
             + THEME.mt
             + theme(figure_size=(7,6)
                 , panel_grid_major=element_blank()
                 , axis_text=element_blank())
             #+ scale_fill_continuous(breaks=np.geomspace(1,800 , 10))
-            + ggtitle("Applicant Count by Countries")
+            + ggtitle("Total Applicant Count by Countries")
             + xlab("")
 
         )
 
         p_diff =(
         ggplot(year_diff , aes(x="variable" , y="value" , group="PERM_ADDRESS_COUNTRY"))
-        + geom_line(color="white")
+        + geom_line(color="#023047")
+        + geom_hline(yintercept=0 , color="#4f5d75")
         + geom_text(data=year_diff[year_diff["variable"] ==  year_diff["variable"].max()]
                     , mapping=aes(label="PERM_ADDRESS_COUNTRY" ,color="is_positive")
                     , nudge_x=0.01
                     , ha="left"
-                    ,alpha=0.5)
-            + THEME.cat_colors
+                    ,alpha=0.8)
             + THEME.mt
-            + theme(figure_size=(5,4)
+            + theme(figure_size=(10,5)
                     , panel_grid_major_y=element_blank())
-            + scale_y_continuous(values=np.arange(-10,10,5))
-            + scale_color_discrete(guide=False)
+            #+ scale_y_continuous(values=np.arange(-10,10,5))
+            + scale_color_manual(guide=False , values=THEME.colors_dark)
             #+ scale_fill_manual(values={True : "#2a9d8f" , False : "#f4a261"} , guide=False)
-            + ylab("Difference")
-            + ggtitle("2021 to 2019 Application Count Difference")
+            + ylab("Difference from Previous Year")
+            + xlab("Year")
+            + ggtitle("Year over Year - Application Count Difference")
 
 
         )
         return [p_counts , p_geo  , p_diff]
 
 
-    def plot(self,checklist):
-        df = self._filteredDf(checklist)
-        p = self._chart(df,checklist)
+    def plot(self,**kwargs):
+        df = self._filteredDf(**kwargs)
+        p = self._chart(df,**kwargs)
         return p
 
 
@@ -132,13 +139,8 @@ class Basic(DashApp):
         #self.plot(None , None)
         pass
 
-    def _filter_based_on_checklist(self,checklist):
-        print(checklist)
-        if len(checklist) == 0:
-            # Nothing selected then show error image
-            p = self.getErrorPlot(self.NO_SELECTION_MSG)
-        else:
-            p = self.plot(checklist)
+    def _filter_based_on_checklist(self,**kwargs):
+        p = self.plot(**kwargs)
 
         logging.info("Plot to Img Src")
         src = self.plotToImgSrc(p)
@@ -164,21 +166,44 @@ class Basic(DashApp):
     def setupCallBacks(self):
         @self.app.callback(
             Output(component_id=Basic.HTML_IDS.IMG, component_property='children'),
-            [Input(component_id=Basic.HTML_IDS.CHECKLIST, component_property='value')]
+            [Input(component_id=Basic.HTML_IDS.CHECKLIST, component_property='value')
+            ,Input(component_id=Basic.HTML_IDS.YEAR_CHECKLIST, component_property='value')
+            ,Input(component_id=Basic.HTML_IDS.PROGRAM_CHECKLIST, component_property='value')]
         )
-        def filter_based_on_checklist(checklist):
-            return self._filter_based_on_checklist(checklist)
+        def filter_based_on_checklist(checklist , year_checklist ,program_checklist):
+            return self._filter_based_on_checklist(checklist = checklist , year_checklist =year_checklist ,program_checklist=program_checklist)
 
     def makeInputLayout(self):
         return html.Div(className="row" , children=[
-            html.Div(className="col-md-12" , children=[
-                dbc.Checklist(id=Basic.HTML_IDS.CHECKLIST
-                            ,options=[{"label" : "All" , "value":"All"}] + [{"label" : v , "value" : v} for v in DataFrameService().get_top_countries(self.TOP_N)]
-                            , value=["All"]
-                            , className="form-control"
-                            ,inline=True),
+                html.Div(className="col-md-12" , children=[
+                    html.Div(className="row" , children=[
+                        html.Div(className="col-md-12" , children=[
+                            dbc.Checklist(id=Basic.HTML_IDS.PROGRAM_CHECKLIST
+                                        ,options=[{"label" : "All" , "value":"All"}] + [{"label" : v , "value" : v} for v in DataFrameService().get_unique_values("program")]
+                                        , value=["All"]
+                                        , className="form-control"
+                                        ,inline=True),
 
-            ])
+                        ])]),
+                    html.Div(className="row" , children=[
+                        html.Div(className="col-md-12" , children=[
+                            dbc.Checklist(id=Basic.HTML_IDS.YEAR_CHECKLIST
+                                        ,options=[{"label" : "All" , "value":"All"}] + [{"label" : v , "value" : v} for v in DataFrameService().get_unique_values("year")]
+                                        , value=["All"]
+                                        , className="form-control"
+                                        ,inline=True),
+
+                        ])]),
+                    html.Div(className="row" , children=[
+                        html.Div(className="col-md-12" , children=[
+                            dbc.Checklist(id=Basic.HTML_IDS.CHECKLIST
+                                        ,options=[{"label" : "All" , "value":"All"}] + [{"label" : v , "value" : v} for v in DataFrameService().get_top_countries(self.TOP_N)]
+                                        , value=["All"]
+                                        , className="form-control"
+                                        ,inline=True),
+
+                        ])])
+                    ])
         ])
 
     def makeLayout(self):
@@ -191,8 +216,9 @@ class Basic(DashApp):
                 children=[
                     html.Div(className="row-fluid" , children=[
                         html.Div(id="title" ,children=[
-                            html.Center(children=[html.H5("Applicant Counts")])
+                            html.Center(children=[html.H5(self.TITLE)])
                         ]),
+                        html.Hr(className="hr"),
                         html.Div(id=Basic.HTML_IDS.IMG,  className="plot-holder-div")
                     ])
                 ]

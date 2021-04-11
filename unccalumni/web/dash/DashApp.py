@@ -66,7 +66,7 @@ class DashApp:
 
     def getErrorPlot(self , msg="Error Occured"):
         df = DataFrame({"x" : [10] , "y":[2] , "label":[msg]})
-        p = ggplot(df , aes(x="x" , y="y" , label="label")) + geom_text(color="white") \
+        p = ggplot(df , aes(x="x" , y="y" , label="label")) + geom_text(color="Black") \
             + THEME.cat_colors_lines \
               + THEME.mt \
               + theme(figure_size=(20,4) ,axis_text=element_blank(), panel_grid_major=element_blank() , panel_grid_minor=element_blank())

@@ -11,12 +11,12 @@ var app = new Vue({
       url = "/help/"+url
       this.loadDashApp(url)
     },
-    loadDashApp : function(url){
+    loadDashApp : function(url , label){
       // For correct ordering of apps while displaying
       var r = Math.floor(Math.random()*1000000)
       url = url + r
       //Add to DashApps array
-      this.dashApps.unshift(url)
+      this.dashApps.unshift([url , label])
         // self = this;
         // staging_selector = "#dash-app-staging"
         // staging_div = $(staging_selector)
@@ -30,7 +30,7 @@ var app = new Vue({
     },
     deleteDashApp:function(url){
       this.dashApps = this.dashApps.filter(function(d){
-        return d != url;
+        return d[0] != url;
       })
     }
   }
