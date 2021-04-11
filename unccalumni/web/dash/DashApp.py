@@ -73,23 +73,27 @@ class DashApp:
         return p
 
     def plotToImgSrc(self,p):
-        log.info("Img To SRC")
-        start_time = time.time()
-        if type(p) == list:
-            plot_img = self.pool.map(lambda pi:self.plotToImgSrc(pi) , p) #[self.plotToImgSrc(pi) for pi in p]
-        else:
-            fig = p.draw()
-            tmpfile = BytesIO()
-            fig.savefig(tmpfile, format='png' ,bbox_inches='tight')
-            #log.info("Saved--")
-            encoded = base64.b64encode(tmpfile.getvalue()).decode('utf-8')
-            plot_img = 'data:image/png;base64,{}'.format(encoded)
+        try:
+            log.info("Img To SRC")
+            start_time = time.time()
+            if type(p) == list:
+                #plot_img = self.pool.map(lambda pi:self.plotToImgSrc(pi) , p) #[self.plotToImgSrc(pi) for pi in p]
+                plot_img = [self.plotToImgSrc(pi) for pi in p]
+            else:
+                fig = p.draw()
+                tmpfile = BytesIO()
+                fig.savefig(tmpfile, format='png' ,bbox_inches='tight')
+                #log.info("Saved--")
+                encoded = base64.b64encode(tmpfile.getvalue()).decode('utf-8')
+                plot_img = 'data:image/png;base64,{}'.format(encoded)
 
-            #tmpfile = str(random.randint(0,100000000))
-            #fp = os.path.join(self.imp_dump , tmpfile)
-            #p.save(fp)
-            #plot_img = f"/static/temp_imgs/{tmpfile}.png"
-        log.info(f"Done - Img To SRC - {time.time()-start_time}")
+                #tmpfile = str(random.randint(0,100000000))
+                #fp = os.path.join(self.imp_dump , tmpfile)
+                #p.save(fp)
+                #plot_img = f"/static/temp_imgs/{tmpfile}.png"
+            log.info(f"Done - Img To SRC - {time.time()-start_time}")
+        except Exception as e:
+            plot_img = self.getErrorPlot(f"Something Went Wrong {e}")
         return plot_img
 
     def srcToImgs(self,src):
