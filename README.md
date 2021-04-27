@@ -1,4 +1,4 @@
-# unccalumni
+# Applicant Mapping Project
 
 # Architecture
 
@@ -44,3 +44,14 @@
       - Push the changes to Heroku : `git push heroku master` 
       - Now you will be able to see your application at `https://$APPLICATION_NAME.herokuapp.com `
       - In case of any issues follow the guide [here](https://dash.plotly.com/deployment)
+
+# Current State
+  - Currently the application has 5 dashboards
+   
+  |Dashboard||
+  |---|---|
+  |Summary|![image](https://user-images.githubusercontent.com/6872080/116257868-6b037180-a742-11eb-9014-119c8e47a880.png)|
+  |Applicant Counts|![image](https://user-images.githubusercontent.com/6872080/116258078-a00fc400-a742-11eb-8461-2cced5569f15.png)|
+  |Test Scores|![image](https://user-images.githubusercontent.com/6872080/116258676-24624700-a743-11eb-829f-bf9d52220b2f.png)|
+  |Maps|![image](https://user-images.githubusercontent.com/6872080/116258776-3e9c2500-a743-11eb-8238-984bc5f6b9bc.png)|
+  |Applicant Background|This is the slowest dashboard that fails to load quite a few times due to Heroku timeouts|
