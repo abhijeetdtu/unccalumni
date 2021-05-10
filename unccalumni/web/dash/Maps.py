@@ -21,7 +21,11 @@ import pdb
 logging.basicConfig(level = logging.INFO)
 
 class Maps(Basic):
+    """
+    Inherits from `Basic` and overrides `filteredDf` and `chart` methods
 
+    Also adds a custom `country selection` by overriding `makeInputLayout` and `setupCallBacks`
+    """
     class HTML_IDS:
         IMG = "img"
         COUNTRY_SELECTION = "country_selection"
@@ -33,7 +37,15 @@ class Maps(Basic):
         super().__init__(route,flaskApp , "Number of Applicants by Geography")
 
 
-    def _filteredDf(self ,country_selection, year_checklist , program_checklist):
+    def filteredDf(self ,country_selection, year_checklist , program_checklist):
+        """
+        Filters data based on year , program and country selection.
+        This also returns the `Geo Dataframes` for 4 supported geographies
+        1. India
+        2. China
+        3. US
+        4. North Carolina
+        """
         alum_df= DataFrameService().get_alumni_df()
 
         if "All" not in year_checklist:
@@ -56,38 +68,50 @@ class Maps(Basic):
         return alum_df , DataFrameService().get_india_geo_df() , DataFrameService().get_china_geo_df() ,DataFrameService().get_us_geo_df() ,DataFrameService().get_nc_geo_df()
 
     def plot_state(self,df , state_geo , name):
-          india_state_app_counts = df.groupby(["NAME_1" ]).size()
-          india_state_app_counts = india_state_app_counts.reset_index(name="counts")
-          india_state_app_counts = india_state_app_counts[india_state_app_counts["counts"] > 1]
-          merged = state_geo.merge(india_state_app_counts ,on="NAME_1" , how="left")
+        """
+            Creates GEO Maps.
 
-          if india_state_app_counts.shape[0] == 0:
-              return self.getErrorPlot(self.ERROR_MSG)
+            parameters:
+            - state_geo : it's a geo dataframe passed from `filteredDf`
+            - name: this is used to switch between Country level and state level as in the case of North Carolina
+                - Possible Values
+                    - india
+                    - china
+                    - united states
+                    - NC
+        """
+        india_state_app_counts = df.groupby(["NAME_1" ]).size()
+        india_state_app_counts = india_state_app_counts.reset_index(name="counts")
+        india_state_app_counts = india_state_app_counts[india_state_app_counts["counts"] > 1]
+        merged = state_geo.merge(india_state_app_counts ,on="NAME_1" , how="left")
 
-          col =  "PERM_ADDRESS_LINE_3" if name == "NC" else "NAME_1"
-          counts_df = df[col].value_counts().head(10).reset_index(name="counts")
-          counts_df["index"] = pd.Categorical(counts_df["index"] , categories=counts_df["index"] , ordered=True)
+        if india_state_app_counts.shape[0] == 0:
+          return self.getErrorPlot(self.ERROR_MSG)
 
-          pbar = (
-            ggplot(counts_df
-                , aes(x="index" , y="counts"))
-                + geom_col()
-                + coord_flip()
-                + xlab("Region")
-                + ylab("Count of Applicants")
-                + THEME.mt
-                + theme(figure_size=(3,4))
-          )
-          pmap = (
-              ggplot()
-              + geom_map(merged , aes(fill="counts") , color=None)
-              + THEME.mt
-              + THEME.gradient_colors
-              + theme(figure_size=(6,4))
-          )
-          return [pmap , pbar]
+        col =  "PERM_ADDRESS_LINE_3" if name == "NC" else "NAME_1"
+        counts_df = df[col].value_counts().head(10).reset_index(name="counts")
+        counts_df["index"] = pd.Categorical(counts_df["index"] , categories=counts_df["index"] , ordered=True)
 
-    def _chart(self,dfs,country_selection,year_checklist , program_checklist):
+        pbar = (
+        ggplot(counts_df
+            , aes(x="index" , y="counts"))
+            + geom_col()
+            + coord_flip()
+            + xlab("Region")
+            + ylab("Count of Applicants")
+            + THEME.mt
+            + theme(figure_size=(3,4))
+        )
+        pmap = (
+          ggplot()
+          + geom_map(merged , aes(fill="counts") , color=None)
+          + THEME.mt
+          + THEME.gradient_colors
+          + theme(figure_size=(6,4))
+        )
+        return [pmap , pbar]
+
+    def chart(self,dfs,country_selection,year_checklist , program_checklist):
         if dfs is None:
             return self.getErrorPlot(self.ERROR_MSG)
 
@@ -101,16 +125,6 @@ class Maps(Basic):
         }
         return self.plot_state(alum_df,country[country_selection],country_selection)
 
-    def _filter_based_on_checklist(self,**kwargs):
-        p = self.plot(**kwargs)
-
-        logging.info("Plot to Img Src")
-        src = self.plotToImgSrc(p)
-        logging.info("Src to Dash Imgs")
-        imgs  =self.srcToImgs(src)
-        logging.info("Dash Imgs to Layout")
-        children = self.makePlotImgsLayout(imgs)
-        return children
 
     def makePlotImgsLayout(self, imgs):
         return html.Div(className="dash-container container p-0 m-0", children=[
@@ -132,8 +146,8 @@ class Maps(Basic):
             ,Input(component_id=Basic.HTML_IDS.YEAR_CHECKLIST, component_property='value')
             ,Input(component_id=Basic.HTML_IDS.PROGRAM_CHECKLIST, component_property='value')]
         )
-        def filter_based_on_checklist(country_selection,year_checklist ,program_checklist):
-            return self._filter_based_on_checklist(country_selection = country_selection,year_checklist =year_checklist ,program_checklist=program_checklist)
+        def filter_based_on_checklist_callback(country_selection,year_checklist ,program_checklist):
+            return self.filter_based_on_checklist(country_selection = country_selection,year_checklist =year_checklist ,program_checklist=program_checklist)
 
     def makeInputLayout(self):
         return html.Div(className="row" , children=[

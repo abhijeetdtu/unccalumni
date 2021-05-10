@@ -21,7 +21,10 @@ import pdb
 logging.basicConfig(level = logging.INFO)
 
 class Scores(Basic):
-
+    """
+    Creates the Test Scores Dashboard.
+    It inherits the `Basic` class and overrides `_filteredDf` and `_chart` methods
+    """
     class HTML_IDS:
         SCORE_DROPDOWN = "score_dropdown"
 
@@ -29,10 +32,10 @@ class Scores(Basic):
         self.score_columns = DataFrameService().get_score_columns()
         super().__init__(route,flaskApp , "Scores")
 
-    def _filteredDf(self,checklist , year_checklist , program_checklist , scores_column):
-        return super()._filteredDf(checklist , year_checklist , program_checklist )
+    def filteredDf(self,checklist , year_checklist , program_checklist , scores_column):
+        return super().filteredDf(checklist , year_checklist , program_checklist )
 
-    def _chart(self,dfs,checklist,year_checklist , program_checklist,scores_column):
+    def chart(self,dfs,checklist,year_checklist , program_checklist,scores_column):
         print(scores_column)
         if dfs is None:
             return self.getErrorPlot(self.ERROR_MSG)
@@ -76,8 +79,8 @@ class Scores(Basic):
             ,Input(component_id=Basic.HTML_IDS.PROGRAM_CHECKLIST, component_property='value')
             ,Input(component_id=Scores.HTML_IDS.SCORE_DROPDOWN, component_property='value')]
         )
-        def filter_based_on_checklist(checklist , year_checklist ,program_checklist , scores_column):
-            return self._filter_based_on_checklist(checklist = checklist
+        def filter_based_on_checklist_callback(checklist , year_checklist ,program_checklist , scores_column):
+            return self.filter_based_on_checklist(checklist = checklist
                                                     , year_checklist =year_checklist
                                                     ,program_checklist=program_checklist
                                                     , scores_column=scores_column)

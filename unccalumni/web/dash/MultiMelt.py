@@ -28,8 +28,8 @@ class MultiMelt(Basic):
     def __init__(self,route,flaskApp):
         super().__init__(route,flaskApp , "Applicant Background")
 
-    def _filteredDf(self,checklist , year_checklist , program_checklist , segment):
-        return super()._filteredDf(checklist , year_checklist , program_checklist )
+    def filteredDf(self,checklist , year_checklist , program_checklist , segment):
+        return super().filteredDf(checklist , year_checklist , program_checklist )
 
     def col_multi_melt(self,df, str , type):
       edu_name_col = [c for c in df.columns if c.find(str) > -1]
@@ -51,7 +51,7 @@ class MultiMelt(Basic):
       )
       return p
 
-    def _chart(self,dfs,checklist,year_checklist , program_checklist , segment):
+    def chart(self,dfs,checklist,year_checklist , program_checklist , segment):
         if dfs is None:
             return self.getErrorPlot(self.ERROR_MSG)
 
@@ -67,8 +67,8 @@ class MultiMelt(Basic):
             ,Input(component_id=Basic.HTML_IDS.PROGRAM_CHECKLIST, component_property='value')
             ,Input(component_id=MultiMelt.HTML_IDS.SEGMENT, component_property='value')]
         )
-        def filter_based_on_checklist(checklist , year_checklist ,program_checklist , segment):
-            return self._filter_based_on_checklist(checklist = checklist
+        def filter_based_on_checklist_callback(checklist , year_checklist ,program_checklist , segment):
+            return self.filter_based_on_checklist(checklist = checklist
                                                     , year_checklist =year_checklist
                                                     ,program_checklist=program_checklist
                                                     , segment=segment)

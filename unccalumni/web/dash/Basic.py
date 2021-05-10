@@ -21,6 +21,23 @@ import pdb
 logging.basicConfig(level = logging.INFO)
 
 class Basic(DashApp):
+    """Root class for inheritance. Handles three filters in current state.
+    1. Country Filter - called `checklist`
+    2. Year Filter - `year_checklist`
+    3. Program Filter - filter on `DSBA` or `HIA`
+
+    Function Call Sequence is as follows
+    1. `makeLayout` - sets up the UI elements and calls `setupCallBacks`
+    2. `setupCallBacks` - passes all input changes to `filter_based_on_checklist` method
+    3. `filter_based_on_checklist` - this method class `plot` method and converts plots to images for display
+    4. `plot` - this method calls the two most important methods `_filteredDf` and `_chart`
+    5. `filteredDf` - this method is for fetching the data and filtering it
+    6. `chart` - this is for making the chart based on fetched and filtered data
+
+    - To add new filters start from `makeLayout` and modify all functions as needed
+    - To only fetch new data - override `_filteredDf`
+    - To just add another chart to existing data, only override `_chart` method
+    """
 
     class HTML_IDS:
         IMG = "img"
@@ -29,6 +46,20 @@ class Basic(DashApp):
         PROGRAM_CHECKLIST = "program_checklist"
 
     def __init__(self,route,flaskApp , title=None):
+        """Create a Basic App
+
+        parameters:
+        - route: the web route to which this app will be attached
+        - flaskApp : the flask app object to which this app will be attached
+
+        example:
+
+            from flask import Flask
+            app = Flask(__name__)
+
+            basic_dash = Basic("/dash/basic" , app)
+        """
+
         self.default_word = "modi"
         self.INPUT_PLACEHOLDER = "Search for something like Election, Coronavirus , Delhi"
         self.ERROR_MSG = "Term not found, try something else"
@@ -38,7 +69,18 @@ class Basic(DashApp):
         super().__init__(route,flaskApp)
 
 
-    def _filteredDf(self,checklist , year_checklist , program_checklist):
+    def filteredDf(self,checklist , year_checklist , program_checklist):
+        """This is main method for fetching data that should be overridden when inheriting. This is called from
+        `setupCallbacks` method which sets up Dash Based UI elements and callbacks for filtering.
+
+        You should load your dataframe here using `DataFrameService` and filter it based on the parameters passed.
+
+        parameters:
+        - checklist - this is the list of countries selected in the UI
+        - year_checklist - this is the list of years selected in the UI
+        - program_checklist - this is the list of programs (DSBA , HIA) selected in the UI
+        """
+
         alum_df= DataFrameService().get_alumni_df()
         if "All" not in checklist:
             alum_df = alum_df[alum_df["PERM_ADDRESS_COUNTRY"].isin(checklist)]
@@ -50,7 +92,18 @@ class Basic(DashApp):
 
         return alum_df , DataFrameService().get_geo_df()
 
-    def _chart(self,dfs,checklist,year_checklist , program_checklist):
+    def chart(self,dfs,checklist,year_checklist , program_checklist):
+        """This is main method for creating a plot that should be overridden when inheriting. This is called from
+        `setupCallbacks` method which sets up Dash Based UI elements and callbacks for filtering.
+
+        You should load your dataframe here using `DataFrameService` and filter it based on the parameters passed.
+
+        parameters:
+        - dfs : these are the dataframes returned from `_filteredDf` method
+        - checklist - this is the list of countries selected in the UI
+        - year_checklist - this is the list of years selected in the UI
+        - program_checklist - this is the list of programs (DSBA , HIA) selected in the UI
+        """
         if dfs is None:
             return self.getErrorPlot(self.ERROR_MSG)
 
@@ -130,8 +183,11 @@ class Basic(DashApp):
 
 
     def plot(self,**kwargs):
-        df = self._filteredDf(**kwargs)
-        p = self._chart(df,**kwargs)
+        """
+            This method passes along all the `**kwargs` arguments from `filter_based_on_checklist` method to `filteredDf` and `chart` methods
+        """
+        df = self.filteredDf(**kwargs)
+        p = self.chart(df,**kwargs)
         return p
 
 
@@ -139,7 +195,10 @@ class Basic(DashApp):
         #self.plot(None , None)
         pass
 
-    def _filter_based_on_checklist(self,**kwargs):
+    def filter_based_on_checklist(self,**kwargs):
+        """
+            This method passes along all the `**kwargs` arguments `plot` method and converts the returned plots to Images for display in the UI
+        """
         p = self.plot(**kwargs)
 
         logging.info("Plot to Img Src")
@@ -151,6 +210,13 @@ class Basic(DashApp):
         return children
 
     def makePlotImgsLayout(self, imgs):
+        """
+            You should modify this method to change how the plots are laid out in the UI
+            This uses `Bootstrap` system of rows and columns, which can be used to define the layout
+
+            parameters:
+            - imgs : list of images which have been generated for each plot returned by the `chart` method
+        """
         return html.Div(className="dash-container container p-0 m-0", children=[
              html.Div(className="row" ,children=[
                 html.Div(className="col-md-5" , children = [imgs[1]]),
@@ -164,16 +230,33 @@ class Basic(DashApp):
         ])
 
     def setupCallBacks(self):
+        """
+            This method is sets up `Dash` callbacks, linking the inputs created in `makeInputLayout` to the `_filter_based_on_checklist` method
+            If you do decide to add more filters , you should first override `makeInputLayout` and then this method.
+
+            parameters:
+            - checklist - this is the list of countries selected in the UI
+            - year_checklist - this is the list of years selected in the UI
+            - program_checklist - this is the list of programs (DSBA , HIA) selected in the UI
+        """
         @self.app.callback(
             Output(component_id=Basic.HTML_IDS.IMG, component_property='children'),
             [Input(component_id=Basic.HTML_IDS.CHECKLIST, component_property='value')
             ,Input(component_id=Basic.HTML_IDS.YEAR_CHECKLIST, component_property='value')
             ,Input(component_id=Basic.HTML_IDS.PROGRAM_CHECKLIST, component_property='value')]
         )
-        def filter_based_on_checklist(checklist , year_checklist ,program_checklist):
-            return self._filter_based_on_checklist(checklist = checklist , year_checklist =year_checklist ,program_checklist=program_checklist)
+        def filter_based_on_checklist_callback(checklist , year_checklist ,program_checklist):
+            return self.filter_based_on_checklist(checklist = checklist , year_checklist =year_checklist ,program_checklist=program_checklist)
 
     def makeInputLayout(self):
+        """
+            This method creates the UI input elements one for each of the following
+            - checklist - this is a HTML checklist list of countries selected in the UI
+            - year_checklist - this is a HTML checklist of years selected in the UI
+            - program_checklist - this is a HTML checklist of programs (DSBA , HIA) selected in the UI
+
+            These are dynamically populated using the `DataFrameService`
+        """
         return html.Div(className="row" , children=[
                 html.Div(className="col-md-12" , children=[
                     html.Div(className="row" , children=[
@@ -207,7 +290,17 @@ class Basic(DashApp):
         ])
 
     def makeLayout(self):
+        """
+            This method creates the overall layout of the dashboard.
+            Dashboard has
+            1. Title
+            2. horizontal Separator : HR
+            3. Placeholder for all the plots
 
+            This method also calls `makeInputLayout` and `setupCallBacks`
+            This method should rarely be updated. If you need to add filters or change plot arrangement
+            make changes to `makeInputLayout` or `makePlotImgsLayout`
+        """
         self.app.layout = html.Div(className="dash-container container p-0 m-0", children=[
             dcc.Loading(
                 id="loading-holder",
