@@ -6,6 +6,8 @@
 <img src="https://user-images.githubusercontent.com/6872080/116255141-fa5b5580-a73f-11eb-8f42-f459a42e5b8d.png" width="50%"> </img>
 </center>
 
+# API Documentation [here](https://abhijeetdtu.github.io/unccalumni/unccalumni/web/dash.html)
+
 ### Technologies used
   - Python
     - Flask
